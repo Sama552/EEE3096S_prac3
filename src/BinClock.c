@@ -69,11 +69,21 @@ int main(void){
 	//You can comment this file out later
 	wiringPiI2CWriteReg8(RTC, HOUR, 0x13+TIMEZONE);
 	wiringPiI2CWriteReg8(RTC, MIN, 0x4);
-	wiringPiI2CWriteReg8(RTC, SEC, 0x00);
-	
+	wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
+	// hours = 0x13;
+	// mins = 0x4;
+	// secs = 0x00;	
+
 	// Repeat this until we shut down
 	for (;;){
+		// secs = secs + 1;
+		// wiringPiI2CWriteReg8(RTC, HOUR, hours);
+		// wiringPiI2CWriteReg8(RTC, MIN, mins);
+		// wiringPiI2CWriteReg8(RTC, SEC, secs);
 		//Fetch the time from the RTC
+		hours = wiringPiI2CReadReg8(RTC, HOUR);
+		mins = wiringPiI2CReadReg8(RTC, MIN);
+		secs = wiringPiI2CReadReg8(RTC, SEC);
 		//Write your logic here
 		
 		//Function calls to toggle LEDs
