@@ -65,32 +65,32 @@ void initGPIO(void){
 int main(void){
 	initGPIO();
 
-	//Set random time (3:04PM)
+	//Set test time (12:59PM)
 	//You can comment this file out later
-	wiringPiI2CWriteReg8(RTC, HOUR, 0x13+TIMEZONE);
-	wiringPiI2CWriteReg8(RTC, MIN, 0x4);
+	wiringPiI2CWriteReg8(RTC, HOUR, decCompensation(12));
+	wiringPiI2CWriteReg8(RTC, MIN, decCompensation(59));
 	wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
-	// hours = 0x13;
-	// mins = 0x4;
-	// secs = 0x00;	
+
+	delay(300);
+	toggleTime(); // gets the current time and starts counting. comment to use the above test time.
 
 	// Repeat this until we shut down
 	for (;;){
-		// secs = secs + 1;
-		// wiringPiI2CWriteReg8(RTC, HOUR, hours);
-		// wiringPiI2CWriteReg8(RTC, MIN, mins);
-		// wiringPiI2CWriteReg8(RTC, SEC, secs);
 		//Fetch the time from the RTC
 		hours = wiringPiI2CReadReg8(RTC, HOUR);
 		mins = wiringPiI2CReadReg8(RTC, MIN);
 		secs = wiringPiI2CReadReg8(RTC, SEC);
+
+		hours = hFormat(hexCompensation(hours));
+		mins = hexCompensation(mins);
+		secs = hexCompensation(secs);
 		//Write your logic here
 		
 		//Function calls to toggle LEDs
 		//Write your logic here
 		
 		// Print out the time we have stored on our RTC
-		printf("The current time is: %x:%x:%x\n", hours, mins, secs);
+		printf("The current time is: %d:%d:%d\n", hours, mins, secs);
 
 		//using a delay to make our program "less CPU hungry"
 		delay(1000); //milliseconds
@@ -145,6 +145,7 @@ int hexCompensation(int units){
 	  perform operations which work in base10 and not base16 (incorrect logic) 
 	*/
 	int unitsU = units%0x10;
+	units = units & 0b01111111; //set the 7th bit to zero. doesnt work without doing this
 
 	if (units >= 0x50){
 		units = 50 + unitsU;
@@ -170,7 +171,7 @@ int hexCompensation(int units){
  * This function "undoes" hexCompensation in order to write the correct base 16 value through I2C
  */
 int decCompensation(int units){
-	int unitsU = units%10;
+	int unitsU = units%10;	
 
 	if (units >= 50){
 		units = 0x50 + unitsU;
@@ -232,8 +233,9 @@ void minInc(void){
 //This functions will toggle a flag that is checked in main
 void toggleTime(void){
 	long interruptTime = millis();
+	printf("time: %ld", interruptTime);
 
-	if (interruptTime - lastInterruptTime>200){
+	if (interruptTime - lastInterruptTime>200){ //interruptTime - lastInterruptTime>200
 		HH = getHours();
 		MM = getMins();
 		SS = getSecs();
