@@ -47,11 +47,11 @@ void initGPIO(void){
 	printf("LEDS done\n");
 	
 	//Set up the Buttons
-	for(int j; j < sizeof(BTNS)/sizeof(BTNS[0]); j++){
-		pinMode(BTNS[j], INPUT);
-		pullUpDnControl(BTNS[j], PUD_UP);
-	}
 	
+	pinMode(5, INPUT);
+	pullUpDnControl(5, PUD_UP);
+	pinMode(30, INPUT);
+	pullUpDnControl(30, PUD_UP);
 	//Attach interrupts to Buttons
 	wiringPiISR(5, INT_EDGE_FALLING, &hourInc);
 	wiringPiISR(30, INT_EDGE_FALLING, &minInc);
@@ -60,15 +60,15 @@ void initGPIO(void){
 	printf("Setup done\n");
 }
 /*
-*Cleans up the LED outputs, set them all low
+*Cleans up the LED outputs, set them all to input
 */
 void cleanup(int a){
 	printf("\nCleaning up...\n");
 	for(int i=0; i < sizeof(LEDS)/sizeof(LEDS[0]); i++){
-            digitalWrite(LEDS[i], LOW);
+            pinMode(LEDS[i], INPUT);
         } 
-	pwmWrite(SECS, 0);
-	printf("\nLEDs set LOW\n");
+	pinMode(SECS, INPUT);
+	printf("\nLEDs reset\n");
 	exit(0);
 }
 
@@ -94,9 +94,6 @@ int main(void){
 		hours = wiringPiI2CReadReg8(RTC, HOUR);
 		mins = wiringPiI2CReadReg8(RTC, MIN);
 		secs = wiringPiI2CReadReg8(RTC, SEC);
-
-		lightHours((hexCompensation(hours)));
-		lightMins(hexCompensation(mins));
 		
 		hours = hFormat(hexCompensation(hours));
 		mins = hexCompensation(mins);
@@ -104,11 +101,13 @@ int main(void){
 		//Write your logic here
 		
 		//Function calls to toggle LEDs
+		lightHours((hexCompensation(hours)));
+		lightMins(hexCompensation(mins));
+		secPWM(secs);
 		//Write your logic here
 		
 		// Print out the time we have stored on our RTC
 		printf("The current time is: %d:%d:%d\n", hours, mins, secs);
-		secPWM(secs);
 
 		//using a delay to make our program "less CPU hungry"
 		delay(1000); //milliseconds
