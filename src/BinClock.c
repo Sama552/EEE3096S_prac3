@@ -101,8 +101,8 @@ int main(void){
 		//Write your logic here
 		
 		//Function calls to toggle LEDs
-		lightHours((hexCompensation(hours)));
-		lightMins(hexCompensation(mins));
+		lightHours(hours);
+		lightMins(mins);
 		secPWM(secs);
 		//Write your logic here
 		
