@@ -4,8 +4,8 @@
  * Modified for EEE3095S/3096S by Keegan Crankshaw
  * August 2019
  * 
- * <STUDNUM_1> <STUDNUM_2>
- * Date
+ * BRDCAL003 NRGSAM001
+ * August 2019
 */
 
 #include <wiringPi.h>
@@ -13,7 +13,7 @@
 #include <softPwm.h>
 #include <stdio.h> //For printf functions
 #include <stdlib.h> // For system functions
-
+#include <signal.h> //For the keyboard interrupt
 #include "BinClock.h"
 #include "CurrentTime.h"
 
@@ -58,7 +58,18 @@ void initGPIO(void){
 	printf("BTNS done\n");
 	printf("Setup done\n");
 }
-
+/*
+*Cleans up the LED outputs, set them all low
+*/
+void cleanup(int a){
+	printf("\nCleaning up...\n");
+	for(int i=0; i < sizeof(LEDS)/sizeof(LEDS[0]); i++){
+            digitalWrite(LEDS[i], LOW);
+        } 
+	pwmWrite(SECS, 0);
+	printf("\nLEDs set LOW\n");
+	exit(0);
+}
 
 /*
  * The main function
@@ -69,13 +80,13 @@ int main(void){
 
 	//Set test time (12:59PM)
 	//You can comment this file out later
-	wiringPiI2CWriteReg8(RTC, HOUR, decCompensation(12));
-	wiringPiI2CWriteReg8(RTC, MIN, decCompensation(59));
-	wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
+	//wiringPiI2CWriteReg8(RTC, HOUR, decCompensation(12));
+	//wiringPiI2CWriteReg8(RTC, MIN, decCompensation(59));
+	//wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
 
-	delay(300);
+	delay(201);
 	toggleTime(); // gets the current time and starts counting. comment to use the above test time.
-
+	signal(SIGINT, cleanup);
 	// Repeat this until we shut down
 	for (;;){
 		//Fetch the time from the RTC
@@ -83,6 +94,9 @@ int main(void){
 		mins = wiringPiI2CReadReg8(RTC, MIN);
 		secs = wiringPiI2CReadReg8(RTC, SEC);
 
+		lightHours((hexCompensation(hours)));
+		lightMins(hexCompensation(mins));
+		
 		hours = hFormat(hexCompensation(hours));
 		mins = hexCompensation(mins);
 		secs = hexCompensation(secs);
@@ -117,16 +131,36 @@ int hFormat(int hours){
 
 /*
  * Turns on corresponding LED's for hours
+ * Goes through binary bit by bit to write each to the LEDs
+ * When plugging in LEDs, Hours first then minutes
+ * but they should go in reverse order
+ * ie: LSB of hours plugs into pin 0
  */
 void lightHours(int units){
-	// Write your logic to light up the hour LEDs here	
+	for(int shift = 3; shift >= 0; shift--){
+		int shifted = units>>shift;
+		if (shifted & 1){
+			digitalWrite(LEDS[shift], 1);
+		}
+		else{
+			digitalWrite(LEDS[shift], 0);
+		}
+	}	
 }
 
 /*
  * Turn on the Minute LEDs
  */
 void lightMins(int units){
-	//Write your logic to light up the minute LEDs here
+	for(int shift = 5; shift >= 0; shift--){
+                int shifted = units>>shift;
+                if (shifted & 1){
+                        digitalWrite(LEDS[shift+4], HIGH);
+                }
+                else{
+                        digitalWrite(LEDS[shift+4], LOW);
+                }
+        }
 }
 
 /*
