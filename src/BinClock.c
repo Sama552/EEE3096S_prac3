@@ -10,6 +10,7 @@
 
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
+#include <softPwm.h>
 #include <stdio.h> //For printf functions
 #include <stdlib.h> // For system functions
 
@@ -40,6 +41,7 @@ void initGPIO(void){
 	}
 	
 	//Set Up the Seconds LED for PWM
+	softPwmCreate(SECS, 0, 59);
 	//Write your logic here
 	
 	printf("LEDS done\n");
@@ -91,6 +93,7 @@ int main(void){
 		
 		// Print out the time we have stored on our RTC
 		printf("The current time is: %d:%d:%d\n", hours, mins, secs);
+		secPWM(secs);
 
 		//using a delay to make our program "less CPU hungry"
 		delay(1000); //milliseconds
@@ -133,6 +136,7 @@ void lightMins(int units){
  */
 void secPWM(int units){
 	// Write your logic here
+	softPwmWrite(SECS, units);
 }
 
 /*
@@ -205,8 +209,11 @@ void hourInc(void){
 	if (interruptTime - lastInterruptTime>200){
 		printf("Interrupt 1 triggered, %x\n", hours);
 		//Fetch RTC Time
+		int h = hexCompensation(wiringPiI2CReadReg8(RTC, HOUR));
 		//Increase hours by 1, ensuring not to overflow
+		h = hFormat(h+1);
 		//Write hours back to the RTC
+		wiringPiI2CWriteReg8(RTC, HOUR, decCompensation(h));
 	}
 	lastInterruptTime = interruptTime;
 }
@@ -223,8 +230,15 @@ void minInc(void){
 	if (interruptTime - lastInterruptTime>200){
 		printf("Interrupt 2 triggered, %x\n", mins);
 		//Fetch RTC Time
+		int m = hexCompensation(wiringPiI2CReadReg8(RTC, MIN));
 		//Increase minutes by 1, ensuring not to overflow
+		m = m + 1;
+		if (m >= 60){
+			m = 0;
+			hourInc();
+		}
 		//Write minutes back to the RTC
+		wiringPiI2CWriteReg8(RTC, MIN, decCompensation(m));
 	}
 	lastInterruptTime = interruptTime;
 }
