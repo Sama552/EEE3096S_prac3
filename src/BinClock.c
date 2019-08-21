@@ -133,8 +133,9 @@ int hFormat(int hours){
  * Turns on corresponding LED's for hours
  * Goes through binary bit by bit to write each to the LEDs
  * When plugging in LEDs, Hours first then minutes
- * but they should go in reverse order
+ * but they should go in reverse order or flip the shift
  * ie: LSB of hours plugs into pin 0
+ * adapted from https://www.programmingsimplified.com/c/source-code/c-program-convert-decimal-to-binary
  */
 void lightHours(int units){
 	for(int shift = 3; shift >= 0; shift--){
